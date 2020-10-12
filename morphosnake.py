@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 #
 # MorphoSnake - Python Morphometry program for 2D shapes
 #
@@ -55,8 +55,8 @@ leaf_colors = matplotlib.colors.ListedColormap([leaf_color, background_color]) #
 skel_colors = matplotlib.colors.ListedColormap([skel_color])
 
 # from http://rosettacode.org/wiki/Zhang-Suen_thinning_algorithm
+# Return 8-neighbours of point p1 of picture, in order
 def neighbours(i, x, y):
-    '''Return 8-neighbours of point p1 of picture, in order'''
     x1, y1, x_1, y_1 = x+1, y-1, x-1, y+1
     #print((x,y))
     return [i[y+1][x], i[y+1][x+1], i[y][x+1], i[y-1][x+1],  # P2,P3,P4,P5
@@ -86,8 +86,6 @@ def distToSet(s, p):
 def findClosest(s, p):
     ds = [distsq(p, q) for q in s]
     return s[ds.index(min(ds))]
-   
-
 
 # find terminals and junctions, by counting 01 crossings in the neighborhood.
 # 1 crossing       - terminal
@@ -125,7 +123,7 @@ def terminals(skel):
                 if n > 4:
                     print("Strange junction at (%d,%d) with %d transitions."%(x,y),n)
     return terminals, junctions
-    
+
 # offsets to the 8 neighbor pixels around one pixel
 NeighborOffsets = [(1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0, -1), (1, -1)]
 
@@ -161,11 +159,11 @@ def skeletonWalk(skel, visited, p, startJunction, junctions, terminals, dmap):
                     thickness.append(dmap[y+dy][x+dx])
                     skelPixels.append((x+dx,y+dy))
                     if not visited[y+dy][x+dx]:
-                        return ((x+dx,y+dy), 'j', l + np.hypot(dx,dy), thickness, skelPixels) 
+                        return ((x+dx,y+dy), 'j', l + np.hypot(dx,dy), thickness, skelPixels)
                                               # length estimate l + final step
                     else:
                         print("   loop detected! (%d, %d)"%(x+dx,y+dy))
-                        return ((x+dx,y+dy), 'l', l + np.hypot(dx,dy), thickness, skelPixels) 
+                        return ((x+dx,y+dy), 'l', l + np.hypot(dx,dy), thickness, skelPixels)
                                              # length estimate l + final step
                 if (x+dx,y+dy) in terminals:
                     # we found a terminal
@@ -190,7 +188,7 @@ def skeletonWalk(skel, visited, p, startJunction, junctions, terminals, dmap):
 
         if c == 0:
             # There is nowhere to go, but this isn't a terminal.
-            # This happens when a junction has an unnecessary neighbor pixel, 
+            # This happens when a junction has an unnecessary neighbor pixel,
             # which can apppear as a very short branch.
             if l > 0: #no warning if the branch is short
                 print ("Found no neighbors without finding a terminal at (%d, %d) length %f"%(x,y,l))
@@ -198,7 +196,7 @@ def skeletonWalk(skel, visited, p, startJunction, junctions, terminals, dmap):
 
         #there is one unvisited neighbor, go to it
         x,y = nxt
-        
+
 
 # Construct a tree from the skeleton graph, starting at p, which is
 # assumed to be a junction or a terminal.
@@ -223,7 +221,7 @@ def buildTree(skel, visited, dmap, p, junctions, terminals, G):
             else:
                 #visited[y+dy][x+dx] = True
                 neighbors += [(x+dx,y+dy)]
-            
+
     # start a skeletonWalk at every neighbor
     for n in neighbors:
         pp,t,l,thickness,skelPixels = skeletonWalk(skel, visited, n, p, junctions, terminals, dmap)
@@ -238,15 +236,15 @@ def buildTree(skel, visited, dmap, p, junctions, terminals, G):
             G[p][pp]['skelPixels'] = skelPixels         #all the pixels visited during the skeleton walk
             # statistics of the branch width
             G[p][pp]['thicknessProfile'] = 2*thickness  #the full thickness profile along the skeleton
-            G[p][pp]['W_min']  = 2*np.min(thickness) 
+            G[p][pp]['W_min']  = 2*np.min(thickness)
             G[p][pp]['W_max']  = 2*np.max(thickness)
             G[p][pp]['W_mean'] = 2*np.mean(thickness)
             G[p][pp]['W_std']  = 2*np.std(thickness)
             G[p][pp]['fertile'] = False  # initialization of fertile properties of edges as False
         if t == 'j' or t == 's':
             buildTree(skel, visited, dmap, pp, junctions, terminals, G)
-        #if t == 't':            
-        #if t == 'l':  # this branch forms a loop. 
+        #if t == 't':
+        #if t == 'l':  # this branch forms a loop.
             # added to the networkX graph above in any case.
 
 
@@ -262,8 +260,8 @@ def plotG(G):
 #  where delta = 1 if two (or more) children have the max value
 #  for a leaf, S = 1
 #
-# we want Strahler order for edges as well. 
-# for each edge, the number is the smaller of the Strahler numbers of 
+# we want Strahler order for edges as well.
+# for each edge, the number is the smaller of the Strahler numbers of
 # the two nodes.
 # S(e) = min (S(e[0]), S(e[1]))
 #
@@ -275,9 +273,9 @@ def plotG(G):
 def StrahlerOrder(G, root):
     # initialize all nodes to 1
     for p in G:
-        G.node[p]['Strahler'] = 1
-        G.node[p]['level'] = 0      # longest path from this node to a leaf - leaves have level 1.
-    
+        G.nodes[p]['Strahler'] = 1
+        G.nodes[p]['level'] = 0      # longest path from this node to a leaf - leaves have level 1.
+
     nodes = nx.dfs_postorder_nodes(G, root)
     for p in nodes:
         neigh = nx.all_neighbors(G, p)
@@ -285,20 +283,20 @@ def StrahlerOrder(G, root):
         mx = 0
         level = 0
         for q in neigh:
-            if G.node[q]['Strahler'] == mx: # we met the max value again
-                delta = 1 
-            if G.node[q]['Strahler'] > mx:
-                mx = G.node[q]['Strahler']
+            if G.nodes[q]['Strahler'] == mx: # we met the max value again
+                delta = 1
+            if G.nodes[q]['Strahler'] > mx:
+                mx = G.nodes[q]['Strahler']
                 delta = 0
-            level = max(level, G.node[q]['level'])
-        G.node[p]['Strahler'] = mx + delta
-        G.node[p]['level'] = level + 1 
-        
+            level = max(level, G.nodes[q]['level'])
+        G.nodes[p]['Strahler'] = mx + delta
+        G.nodes[p]['level'] = level + 1
+
     # assign Strahler orders to edges too
     for e in G.edges():
-        s = min(G.node[e[0]]['Strahler'], G.node[e[1]]['Strahler'])
+        s = min(G.nodes[e[0]]['Strahler'], G.nodes[e[1]]['Strahler'])
         G[e[0]] [e[1]] ['Strahler'] = s
-        s = min(G.node[e[0]]['level'], G.node[e[1]]['level'])
+        s = min(G.nodes[e[0]]['level'], G.nodes[e[1]]['level'])
         G[e[0]] [e[1]] ['level'] = s
 
     # determine the parent of each node, based on the node 'level'
@@ -306,20 +304,20 @@ def StrahlerOrder(G, root):
         m = 0
         p = None
         for n2 in G[n]:
-            if G.node[n2]['level'] > m and G.node[n2]['level'] > G.node[n]['level']:
-                m = G.node[n2]['level']
+            if G.nodes[n2]['level'] > m and G.nodes[n2]['level'] > G.nodes[n]['level']:
+                m = G.nodes[n2]['level']
                 p = n2
-        G.node[n]['parent'] = p
+        G.nodes[n]['parent'] = p
     return
 
 # return the diameter of the minimal disk centered at p,
 # which touches the background
-# look at all pixels within a square with side 2 R, if no 
+# look at all pixels within a square with side 2 R, if no
 # background is found, double R and try again
 #
 # This function is not in use -  mahotas.distance used instead, faster and gives identical results.
 def maxDisk(im, p):
-    
+
     R = 10
     rminsq = 100000000
 
@@ -331,7 +329,7 @@ def maxDisk(im, p):
                 if not im[y][x]:
                     rminsq = min(rminsq, (x-X)**2+(y-Y)**2)
 
-        if rminsq < R**2: 
+        if rminsq < R**2:
             # rminsq can be trusted only if all pixels at this distance are in the square
             return 2*np.sqrt(rminsq)
         R *= 2
@@ -339,7 +337,7 @@ def maxDisk(im, p):
 
 # find the point on path which crosses the circle centered on P with radius R
 # used for branch angles.
-# For short branches, it's possible that the branch is completely inside the disk.
+# For short branches, it 's possible that the branch is completely inside the disk.
 # then, return the more distant end point of the branch.
 def crossing(P, R, path):
     for p in path:
@@ -353,21 +351,20 @@ def crossing(P, R, path):
     else:
         return p;
 
-
-# determine the angle between the vectors ab and ac, given points a, b, and c as tuples    
+# determine the angle between the vectors ab and ac, given points a, b, and c as tuples
 def angle(a, b, c):
     dot = (b[0]-a[0]) * (c[0]-a[0]) + (b[1]-a[1]) * (c[1]-a[1])
     Dab = dist(a, b)
     Dac = dist(a, c)
     return  np.arccos(dot/(Dab*Dac))
-    
+
 # measure node diameters
 def measureDia(G, dmap):
     for n in G:
-        # d1 = maxDisk(im, n) # find disks manually 
+        # d1 = maxDisk(im, n) # find disks manually
         x,y = n
-        d = 2*np.sqrt(dmap[y][x]) 
-        G.node[n]['dia'] = d
+        d = 2*np.sqrt(dmap[y][x])
+        G.nodes[n]['dia'] = d
 
 def measureApicalDist(G):
     for n in G:
@@ -376,11 +373,10 @@ def measureApicalDist(G):
         # so that all nodes have the same keys
         r = 1000000
         for n2 in G:
-            if G.node[n2]['level'] == 1 and n2 != n:
+            if G.nodes[n2]['level'] == 1 and n2 != n:
                 r = min(r, dist(n, n2))
-        G.node[n]['apicaldist'] = r
-                    
-        
+        G.nodes[n]['apicaldist'] = r
+
 # Measure branch angles in the graph. Must be updated if the root moves.
 # measureDia and StrahlerOrder should be called before this
 def measureAngles(G):
@@ -388,10 +384,10 @@ def measureAngles(G):
     # e[2] is the data dictionary associated with each edge
     for e in G.edges(data=True):
         e[2]['theta'] = {}
-    
+
     for n in G:
         # iterate over neighbors, determine angle to every one
-        d = G.node[n]['dia']
+        d = G.nodes[n]['dia']
         for n2 in G[n]:
             # p is the point where the skeleton crosses this node's disk
             p = crossing(n, d/2.0, G[n][n2]['skelPixels'] )
@@ -401,16 +397,16 @@ def measureAngles(G):
             theta = np.arctan2(-dy, dx) #angle for this vector, in radians, measured counterclockwise from the +x axis
                                         # -dy since y grows downwards here, and upwards traditionally
             #print (dist, theta, d/2.0)
-            
+
             G[n][n2]['theta'][n] = theta
 
         # for each child branch, measure the angle relative to the parent branch, 'alpha'
         # also measure the angle between the straigh lines to the parent node and the child node, 'alpha_e'
         theta_p = None
-        parent = G.node[n]['parent']
+        parent = G.nodes[n]['parent']
         if parent != None:
             theta_p = G[n][parent]['theta'][n]
-        for n2 in G[n]: 
+        for n2 in G[n]:
             if n2 != parent: # a child branch
                 if theta_p != None:
                     theta = G[n][n2]['theta'][n]
@@ -439,14 +435,12 @@ def cleanup(G, root, minLength=5, minDia=8, maxRemoveLen = 20):
     for n in G:
         if G.degree(n) == 1 and n != root:
             p = list(G.neighbors(n))[0] #the parent (only neighbor)
-            if G[n][p]['branchlength'] < minLength or (G.node[n]['dia'] < minDia and G[n][p]['branchlength'] < maxRemoveLen):
+            if G[n][p]['branchlength'] < minLength or (G.nodes[n]['dia'] < minDia and G[n][p]['branchlength'] < maxRemoveLen):
                 removed.append(n)
     G.remove_nodes_from(removed)
     print('removed nodes', removed)
     return removed
 
-
-    
 # plot the graph G with nodes and edges.
 # keep handles to everything, so that they can be updated - i.e. removed and added again
 def plot_graph(G):
@@ -464,7 +458,7 @@ def plot_graph(G):
         for e in edge_labels:
             edge_labels[e].remove()
 
-            
+
     pos = {}
     nlabels = {}
     elabels = {}
@@ -477,25 +471,25 @@ def plot_graph(G):
 
     for p in G.nodes:
         pos[p] = p
-        #nlabels[p] = "%.1f"%G.node[p]['dia']
-        nlabels[p] = "%d"%G.node[p]['Strahler']
-        rad.append(G.node[p]['dia'] * .5)
-        
+        #nlabels[p] = "%.1f"%G.nodes[p]['dia']
+        nlabels[p] = "%d"%G.nodes[p]['Strahler']
+        rad.append(G.nodes[p]['dia'] * .5)
+
     #for e in G.edges():
         #elabels[e] = G.edge[e[0]][e[1]]['Strahler']
         #elabels[e] = G.edge[e[0]][e[1]]['level']
         #if G.edge[e[0]][e[1]]['alpha'] == None:
         #    elabels[e] = '-'
         #else:
-        #    elabels[e] = "%.0f"%(G.edge[e[0]][e[1]]['alpha']*180/np.pi) 
-    
-    nodes = nx.draw_networkx_nodes(G, pos, node_color = [G.node[p]['node_color'] for p in G])
+        #    elabels[e] = "%.0f"%(G.edge[e[0]][e[1]]['alpha']*180/np.pi)
+
+    nodes = nx.draw_networkx_nodes(G, pos, node_color = [G.nodes[p]['node_color'] for p in G])
     plt.setp(nodes, edgecolors=node_edge_color, picker=True)
-    
+
     edges = nx.draw_networkx_edges(G, pos, width = edge_width, alpha=edge_alpha, edge_color=edge_color)
-    node_labels = nx.draw_networkx_labels(G, pos, nlabels) 
-    edge_labels = nx.draw_networkx_edge_labels(G, pos, elabels) 
-    
+    node_labels = nx.draw_networkx_labels(G, pos, nlabels)
+    edge_labels = nx.draw_networkx_edge_labels(G, pos, elabels)
+
 # save CSV files with data for all edges and nodes.
 # columns are saved in the order they are listed in the edge_keys and node_keys below
 def saveTreeText(G, edgeName, nodeName):
@@ -512,40 +506,39 @@ def saveTreeText(G, edgeName, nodeName):
         conversion[k] = 1.0/px_mm_factor
     for k in angle_keys:
         conversion[k] = 180/np.pi
-             
+
     eheader = ''
     for k in edge_keys:
-        eheader += k + ', ' 
+        eheader += k + ', '
     nheader = ''
     for k in node_keys:
-        nheader += k + ', ' 
-    
+        nheader += k + ', '
+
     output = [[e[2][k] * (conversion[k] if k in conversion else 1)
                for k in edge_keys] for e in G.edges(data=True)]
     output.sort() # sort on Strahler order
     np.savetxt(edgeName, output, fmt = '%3d,%3d' + (len(edge_keys)-2) * ', %8.3f', header=eheader, comments='#')
 
-    output = [[n[1][k] * (conversion[k] if k in conversion else 1) 
+    output = [[n[1][k] * (conversion[k] if k in conversion else 1)
                for k in node_keys] for n in G.nodes(data=True)]
     output.sort() # sort on Strahler order
     np.savetxt(nodeName, output, fmt = '%3d,%3d' + (len(node_keys)-2) * ', %8.3f', header=nheader, comments='#')
 
-
 def report(G):
-    # extract values from the data dictionaries of all the nodes and all the edges 
+    # extract values from the data dictionaries of all the nodes and all the edges
 
     # list the keys we are interested in
     node_keys = ['dia', 'apicaldist']
     edge_keys = ['branchlength', 'branchlength_e', 'alpha', 'alpha_e', 'W_mean', 'W_max']
-    
+
 
     all_keys = node_keys + edge_keys
-    
+
     data    = {} # all branches and nodes
     data_t  = {} # terminal branches and nodes
     data_nt = {} # non-terminal branches and nodes
     data_f  = {} # fertile branches and nodes
-    
+
     # extract the data into new dictionaries
     # EXCLUDE the root's branches from alpha and alpha_e ?
     for k in edge_keys:
@@ -556,7 +549,7 @@ def report(G):
             data_t[k]  = []
             data_nt[k] = []
             data_f[k]  = []
-            
+
             for e in G.edges(data=True):
                 v = e[2][k]
                 if e[0] != root and e[1] != root:
@@ -581,32 +574,32 @@ def report(G):
             data_t[k]  = np.array([e[2][k] for e in G.edges(data=True) if e[2]['level'] == 1])
             data_nt[k] = np.array([e[2][k] for e in G.edges(data=True) if e[2]['level'] != 1])
             data_f[k]  = np.array([e[2][k] for e in G.edges(data=True) if e[2]['fertile'] == True])
-        
+
     for k in node_keys:
         data[k]    = np.array([n[1][k] for n in G.nodes(data=True) ])
         data_t[k]  = np.array([n[1][k] for n in G.nodes(data=True) if n[1]['level'] == 1])
         data_nt[k] = np.array([n[1][k] for n in G.nodes(data=True) if n[1]['level'] != 1])
         data_f[k]  = np.array([n[1][k] for n in G.nodes(data=True) if n[1]['fertile'] == True])
-                
-        
+
+
     # convert to degrees from radians
     for d in [data, data_t, data_nt, data_f]:
-        for k in d: 
+        for k in d:
             if k in angle_keys:
                 d[k] *= 180/np.pi
-            
+
     # convert to mm
     if px_mm != None:
         unit = 'mm'
         for d in [data, data_t, data_nt, data_f]:
-            for k in d: 
+            for k in d:
                 if k in length_keys:
                     d[k] /= px_mm
         px_mm_factor = px_mm
     else:
-        unit = 'PX'        
-        px_mm_factor=1.0 #local variable used when scaling for the report file        
-    
+        unit = 'PX'
+        px_mm_factor=1.0 #local variable used when scaling for the report file
+
     print()
     print('RESULTS in %s and degrees'%unit)
     print('-------------------------')
@@ -632,9 +625,9 @@ def report(G):
         std_nt[k] = np.std(data_nt[k])
         avg_f[k]  = np.average(data_f[k])
         std_f[k]  = np.std(data_f[k])
-        
+
     print('                      all      |     terminals   |  non-terminals  |    fertile')
-    print('      parameter   avg    std   |    avg    std   |    avg    std   |   avg    std')    
+    print('      parameter   avg    std   |    avg    std   |    avg    std   |   avg    std')
 
     for k in all_keys:
         print(k.rjust (15), "%6.2f"%avg[k], "%6.2f"%std[k], ' | ', "%6.2f"%avg_t[k], "%6.2f"%std_t[k],  ' | ', "%6.2f"%avg_nt[k], "%6.2f"%std_nt[k],' | ', "%6.2f"%avg_f[k], "%6.2f"%std_f[k])
@@ -652,7 +645,7 @@ def report(G):
 
     report_text += ', %5.0f'%px_mm_factor
     header_text += ', px/mm'
-    
+
     return report_text, header_text
 
 # return the directory of the leafsnake.py file
@@ -660,7 +653,6 @@ def report(G):
 # http://stackoverflow.com/questions/4934806/python-how-to-find-scripts-directory
 def getScriptPath():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
-    
 
 # find the distance between a point p and the line segment between l1 and l2.
 # http://paulbourke.net/geometry/pointlineplane/
@@ -686,24 +678,19 @@ def distPointLine(l1, l2, p):
     else:
         return dist(l2, p)
 
-    
 def findClosestEdge(G, p):
     emin = None
     dmin = 1e100
     for e in G.edges():
-        d = distPointLine(e[0], e[1], p) 
+        d = distPointLine(e[0], e[1], p)
         if d < dmin:
             dmin = d
             emin = e
     return emin
 
-
-    
 ##################
 # New functions: #
 ##################
-
-
 
 def findClosestSkel(skel,p):
    # we store coordinates of pixels in the skeleton in a list
@@ -715,14 +702,13 @@ def findClosestSkel(skel,p):
                listskel += [(x,y)]
    return findClosest(listskel,p)
 
-
 # find the node in G closest to p and delete it
 def deleteNode(G, p):
     print('deleteNode (%5.1f, %5.1f)'%p)
     p = findClosest(list(G.nodes()), p)
     print('closest node is (%5.1f, %5.1f)'%p)
 
-    parent = G.node[p]['parent']
+    parent = G.nodes[p]['parent']
     for n in G.neighbors(p):
         if n!=parent:
             G.add_edge(n,parent)
@@ -734,12 +720,11 @@ def deleteNode(G, p):
             G[parent][n]['W_mean'] = (G[parent][p]['W_mean']+G[p][n]['W_mean'])/2
             G[parent][n]['W_std'] = (G[parent][p]['W_std']+G[p][n]['W_std'])/2
             G[parent][n]['fertile'] = False
-            if G.node[n]['fertile']:
+            if G.nodes[n]['fertile']:
                 G[parent][n]['fertile'] = True
-            
-            
-    G.remove_node(p)
 
+
+    G.remove_node(p)
 
 def addNodeSkel(G,p,skel,junctions,terminals,dmap):
     visited = np.zeros_like(skel)
@@ -749,43 +734,41 @@ def addNodeSkel(G,p,skel,junctions,terminals,dmap):
     for dx,dy in NeighborOffsets:
         if skel[y+dy][x+dx] and not visited[y+dy][x+dx]:
             neighbors += [(x+dx,y+dy)]
-            
+
     for n in neighbors:
         pp,char,l,thickness,skelPixels = skeletonWalk(skel, visited, n, p, junctions, terminals, dmap)
-        
+
         l += np.hypot(n[0]-p[0],n[1]-p[1])  #add length of first step
-        
+
         if char in ('j', 't', 'l', 's') and pp in G:
-            thickness = np.sqrt(thickness) 
+            thickness = np.sqrt(thickness)
             G.add_edge(p, pp)
             G[p][pp]['branchlength'] = l
-            G[p][pp]['branchlength_e'] = np.sqrt(distsq(p, pp)) 
-            G[p][pp]['skelPixels'] = skelPixels      
-            G[p][pp]['thicknessProfile'] = 2*thickness 
-            G[p][pp]['W_min']  = 2*np.min(thickness) 
+            G[p][pp]['branchlength_e'] = np.sqrt(distsq(p, pp))
+            G[p][pp]['skelPixels'] = skelPixels
+            G[p][pp]['thicknessProfile'] = 2*thickness
+            G[p][pp]['W_min']  = 2*np.min(thickness)
             G[p][pp]['W_max']  = 2*np.max(thickness)
             G[p][pp]['W_mean'] = 2*np.mean(thickness)
             G[p][pp]['W_std']  = 2*np.std(thickness)
             G[p][pp]['fertile'] = False      # to change if a node is fertile
-    
+
     #add the diameter for the added node
     x,y = p
-    d = 2*np.sqrt(dmap[y][x]) 
-    G.node[p]['dia'] = d
-    G.node[p]['dia_2'] = d # must be changed
-    G.node[p]['node_color'] = node_color
-    G.node[p]['fertile'] = False
-
+    d = 2*np.sqrt(dmap[y][x])
+    G.nodes[p]['dia'] = d
+    G.nodes[p]['dia_2'] = d # must be changed
+    G.nodes[p]['node_color'] = node_color
+    G.nodes[p]['fertile'] = False
 
 def initializeColorNode(G):
     for p in G:
-        G.node[p]['node_color'] = node_color
-        G.node[p]['fertile'] = False
-        G.node[p]['tag'] = []
+        G.nodes[p]['node_color'] = node_color
+        G.nodes[p]['fertile'] = False
+        G.nodes[p]['tag'] = []
 
 def fourNeighbours(i,x,y):
     return [i[y+1][x], i[y][x+1], i[y-1][x], i[y][x-1]]
-
 
 # s is a binary array of size M x N
 # return the all the points of value 1 that have a cross neighbor of value 0
@@ -817,7 +800,6 @@ def perpendicularLineEquation(m,n,p):
     new_n = y_p - new_m*x_p
     return new_m, new_n
 
-
 # divides the plane in 4 quadrants using the line passing by p and q and the perpedicular line
 # passing by p. return the 2 quadrants on the same side as q.
 def cutSpace(shape,p,q):
@@ -829,7 +811,7 @@ def cutSpace(shape,p,q):
     s2 = []
     s3 = []
     s4 = []
-    
+
     if (x_p == x_q) or (y_p == y_q):
         for (x_n, y_n) in shape:
             if y_n > y_p:
@@ -852,8 +834,8 @@ def cutSpace(shape,p,q):
                 return s2, s4
             else :
                 return s1, s3
-        
-    
+
+
     m1,n1 = lineEquation(p,q)
     m2,n2 = perpendicularLineEquation(m1,n1,p)
     for (x_n, y_n) in shape:
@@ -873,27 +855,24 @@ def cutSpace(shape,p,q):
     else:
         return s2, s4
 
-    
 def measureLeafWidth(shape,G,root):
     for n in G:
         if n == root: #For the time being we take the old diameter for the root.
-            G.node[n]['dia_2'] = G.node[n]['dia'] 
+            G.nodes[n]['dia_2'] = G.nodes[n]['dia']
         else:
-            p = G.node[n]['parent']
+            p = G.nodes[n]['parent']
             #print('node (%5.1f,%5.1f)'%n)
             #print('parent(%5.1f,%5.1f)'%p)
             s1,s2 = cutSpace(shape,n,p)
-            G.node[n]['dia_2'] = distToSet(s1,n) + distToSet(s1,n)
+            G.nodes[n]['dia_2'] = distToSet(s1,n) + distToSet(s1,n)
             #print('measure node : (%5.1f, %5.1f) ok'%n)
-    
-    
-    
+
 def MoyAngleStrahler(G):
     liste = [[] for x in range (10)] #Creer une liste 2 dimensions de 10 lignes : nombre de Strahler ne depasse pas 9 ?
     liste_e = [[] for x in range(10)]
     for e in G.edges(data=True):
         liste[e[2]['Strahler']-1].append(e[2]['alpha'])
-        liste_e[e[2]['Strahler']-1].append(e[2]['alpha_e'])               
+        liste_e[e[2]['Strahler']-1].append(e[2]['alpha_e'])
     moyAngle = []
     moyAngle_e = []
     for x in range (10):
@@ -913,7 +892,6 @@ def MoyAngleStrahler(G):
     print(moyAngle)
     print(moyAngle_e)
 
-
 ###################################################################################
 # Main code starts here
 #
@@ -923,7 +901,6 @@ if len(sys.argv) > 1:
     filename = sys.argv[1]
 else:
     filename = 'img/f.png'
-
 
 # read database of leaves
 leaves = {}
@@ -935,14 +912,13 @@ try:
     fileHandle = open(leavesFile, 'r')
 except:
     print('Could not load the leaf data base')
-    
+
 if fileHandle != None:
     # if the file exists, but the JSON is not correct, this will fail
     # This is on purpose, since if we continue and save the database at the end,
     # the data in it will be overwritten
     leaves = json.load(fileHandle)
 
-    
 path_basename = os.path.splitext(filename)[0]
 print('path_basename', path_basename)
 basename = os.path.splitext(os.path.basename(filename))[0]
@@ -955,7 +931,7 @@ except:
     print('%s was not found in the leaf data base'%basename)
     # add an entry for this leaf to the ditionary
     leaves[basename] = leafData
-    
+
 print('Data for this leaf: ' + str(leafData))
 
 px_mm = None
@@ -968,10 +944,10 @@ except:
     print('No resolution found for leaf %s'%basename)
 
 try:
-    root = tuple(leafData['root']) 
+    root = tuple(leafData['root'])
 except:
     print('No root found for leaf %s'%basename)
-    
+
 print('Resolution: ' + str(px_mm) + ' px/mm')
 print('Root:       ' + str(root))
 print()
@@ -989,7 +965,7 @@ T_otsu = mh.otsu(img) # finds a numeric threshold
 img = (img > T_otsu)  # make image binary
 
 # invert the image (just because the test image is stored the other way)
-img = ~img 
+img = ~img
 
 # close single-pixel holes. Also makes the skeletonization much more well-behaved,
 # with less tiny branches close to terminals.
@@ -1005,7 +981,7 @@ skel = morphology.skeletonize(img)
 # Try mahotas skeletonization. Makes many spikes.
 # works better after mh.close(), but still splits many tips in two.
 # Also gives staircases in the skeleton.
-#skel = mh.thin(img)  
+#skel = mh.thin(img)
 #skel = morphology.skeletonize(skel)  # one pass of the other skeletonization to remove staircases
 
 
@@ -1013,7 +989,7 @@ skel = morphology.skeletonize(img)
 
 # find terminals and junctions. t and j are in the format [(x1, y1), (x2, y2), ...]
 print('Features...')
-t, j = terminals(skel) 
+t, j = terminals(skel)
 
 if root == None:
     # unpack the tuples to separate lists of x:s and y:s, for plotting and root selection
@@ -1028,9 +1004,8 @@ if root == None:
 else:
     if root not in t+j:
         newroot = findClosest(t+j, root)
-        print('Moving the root to a node in the tree. New root is', str(newroot), 'old root was', str(root), 'distance', dist(newroot, root))     
+        print('Moving the root to a node in the tree. New root is', str(newroot), 'old root was', str(root), 'distance', dist(newroot, root))
         root = newroot
-
 
 print('Plotting')
 # create a copy of the boolean skeleton for further use
@@ -1067,12 +1042,12 @@ def updateMeasures(G, root):
     measureApicalDist(G)
     print('  branch angles...')
     measureAngles(G)
-    
+
 def buildGraph(img, skel):
     print('Building tree...')
     G = nx.Graph()
     visited = np.zeros_like(skel) # a new array of zeros, same dimensions as skel
-    
+
     print('  distance transform...')
     dmap = mh.distance(img)
 
@@ -1092,7 +1067,7 @@ def buildGraph(img, skel):
 
     # measure node diameters 2
     measureLeafWidth(contour,G,root)
-    
+
     initializeColorNode(G)
     print('Done.')
     return G
@@ -1105,7 +1080,7 @@ try:
 except:
     # could not read the graph. Constructing it now
     G = buildGraph(img, skel)
-    
+
 # handles to plot elements
 nodes = None
 edges = None
@@ -1134,7 +1109,7 @@ def updateCircles(G,C):
 		Cercle[p].remove()
 	else:
 		Cercle[p].remove()
-		Cercle[p] = plt.Circle(p, radius=G.node[p]['dia'], alpha=terminal_disk_alpha, color=terminal_disk_color)
+		Cercle[p] = plt.Circle(p, radius=G.nodes[p]['dia'], alpha=terminal_disk_alpha, color=terminal_disk_color)
 		plt.gca().add_patch(Cercle[p])
 '''
    for p in C:
@@ -1142,11 +1117,11 @@ def updateCircles(G,C):
            C[p].set_visible(False)
        else:
            C[p].set_visible(False)
-           C[p] = plt.Circle(p, radius=G.node[p]['dia_2']/2, alpha=terminal_disk_alpha, color=terminal_disk_color)
+           C[p] = plt.Circle(p, radius=G.nodes[p]['dia_2']/2, alpha=terminal_disk_alpha, color=terminal_disk_color)
            plt.gca().add_patch(C[p])
 
 updateCircles(G,Cercle)
-            
+
 MoyAngleStrahler(G)
 
 def setRoot(root):
@@ -1155,23 +1130,23 @@ def setRoot(root):
     # save the new root in database
     # convert to int from numpy type, for JSON to work later
     leafData['root'] = (int(root[0]), int(root[1]))
-    
-	
-# a function called when the user clicks a node    
+
+
+# a function called when the user clicks a node
 def onpick(event):
     global select
     # make the clicked node the new selected node
-   
+
     # for some reason it's difficult to get the coordinates of the clicked node
     # so we use mouse coordinates and search for the closest node.
     select = findClosest(list(G.nodes()), (event.mouseevent.xdata, event.mouseevent.ydata))
     select_patch.center = select
     plot_graph(G)
     fig.canvas.draw()
-     
 
 
-    
+
+
 
 undo_stack = []
 
@@ -1187,7 +1162,7 @@ def keypress(event):
         G.remove_edge(*e)
 
         updateMeasures(G, root)
-        plot_graph(G)        
+        plot_graph(G)
         fig.canvas.draw()
 
     if event.key=='u': # undo
@@ -1197,7 +1172,7 @@ def keypress(event):
             setRoot(root)
             updateMeasures(G, root)
             updateCircles(G,C)
-            plot_graph(G)        
+            plot_graph(G)
             fig.canvas.draw()
         else:
             print('No further undo')
@@ -1222,19 +1197,19 @@ def keypress(event):
             dmap = mh.distance(img)
             addNodeSkel(G,p,skel2,j,t,dmap)
 
-        Cercle[p] = plt.Circle(p, radius=(G.node[p]['dia']/2), alpha=terminal_disk_alpha, color=terminal_disk_color)
+        Cercle[p] = plt.Circle(p, radius=(G.nodes[p]['dia']/2), alpha=terminal_disk_alpha, color=terminal_disk_color)
         updateCircles(G,Cercle)
         updateMeasures(G, root)
         report(G)
-        plot_graph(G)        
+        plot_graph(G)
         fig.canvas.draw()
 
 
-        
+
     if select == None:    # verify the selection
         print('No active selection, please select a node')
         return
-    
+
     if event.key=='t': # change the root
         undo_stack.append((G.copy(), root, Cercle))
         root = select
@@ -1242,11 +1217,11 @@ def keypress(event):
         setRoot(root)
         updateMeasures(G, root)
         report(G)
-    
-        plot_graph(G)        
+
+        plot_graph(G)
         fig.canvas.draw()
-        
-    
+
+
     if event.key=='d': # delete closest node
         p = select
         if p == root:
@@ -1256,19 +1231,19 @@ def keypress(event):
         deleteNode(G,p)
         Cercle[p].remove()
         #report(G)
-        
+
         updateMeasures(G, root)
-        plot_graph(G)        
+        plot_graph(G)
         fig.canvas.draw()
-        
+
 
     if event.key=='a': #marking of fertile nodes
         p = select
         print('this node is now fertile')
         undo_stack.append((G.copy(),root,Cercle))
-        G.node[p]['node_color'] = node_color_fertile
-        G.node[p]['fertile'] = True
-        G[p][G.node[p]['parent']]['fertile'] = True
+        G.nodes[p]['node_color'] = node_color_fertile
+        G.nodes[p]['fertile'] = True
+        G[p][G.nodes[p]['parent']]['fertile'] = True
         report(G)
         plot_graph(G)
         fig.canvas.draw()
@@ -1278,8 +1253,8 @@ def keypress(event):
         print('hide caracteristics')
         undo_stack.append((G.copy(),root,Cercle))
         for p in G:
-            if G.node[p]['node_color'] != node_color:
-                G.node[p]['node_color'] = node_color
+            if G.nodes[p]['node_color'] != node_color:
+                G.nodes[p]['node_color'] = node_color
                 plot_graph(G)
                 fig.canvas.draw()
         report(G)
@@ -1289,29 +1264,29 @@ def keypress(event):
         p = select
         print('closest node is (%5.1f, %5.1f)'%p)
         undo_stack.append((G.copy(),root,Cercle))
-        G.node[p]['dia_2'] = 2*dist(p,(event.xdata,event.ydata))
+        G.nodes[p]['dia_2'] = 2*dist(p,(event.xdata,event.ydata))
         updateMeasures(G, root)
         Cercle[p].remove()
-        Cercle[p] = plt.Circle(p,radius=G.node[p]['dia_2']/2,alpha=terminal_disk_alpha,color=terminal_disk_color)
+        Cercle[p] = plt.Circle(p,radius=G.nodes[p]['dia_2']/2,alpha=terminal_disk_alpha,color=terminal_disk_color)
         plt.gca().add_patch(Cercle[p])
-        plot_graph(G)        
-        fig.canvas.draw()   
-        
-  
+        plot_graph(G)
+        fig.canvas.draw()
 
 
-        
+
+
+
 # register the event callback functions
 fig.canvas.mpl_connect('pick_event', onpick)
 fig.canvas.mpl_connect('key_press_event', keypress)
 
 # plot disks for the apical distance, just for testing
 # for n in G:
-#    if G.node[n]['level'] == 1:
-#        r = G.node[n]['apicaldist']
+#    if G.nodes[n]['level'] == 1:
+#        r = G.nodes[n]['apicaldist']
 #        plt.gca().add_patch(plt.Circle(n, radius=r, alpha=.4))
 
-        
+
 report(G)
 plt.tight_layout()
 
@@ -1343,11 +1318,3 @@ print('Saving the database...')
 of = open(leavesFile, "wt")
 json.dump(leaves, of, sort_keys=True, indent=2, separators=(',', ': '))
 print('done.')
-
-
-
-
-
-
-
-
