@@ -1014,23 +1014,23 @@ skel2 = skel
 skel    = np.ma.masked_where(skel==0, skel)
 #visited = np.ma.masked_where (visited==0, visited)
 
-fig = plt.figure()
-fig2 = fig
-
-# Plot images. Inversion here is just for nicer coloring
-# interpolation=nearest is to turn smoothing off.
-
-width = skel.shape[1]
-height= skel.shape[0]
-
-plt.axis((0,width,height,0))
-
-plt.imshow(~img, cmap=leaf_colors, interpolation="nearest")
-#plt.imshow(np.sqrt(dmap), cmap=mpl.cm.jet_r, interpolation="nearest")
-
-plt.imshow(skel, cmap=skel_colors,  interpolation="nearest")
-#plt.imshow(visited, cmap=mpl.cm.cool,  interpolation="nearest")
-
+# fig = plt.figure()
+# fig2 = fig
+#
+# # Plot images. Inversion here is just for nicer coloring
+# # interpolation=nearest is to turn smoothing off.
+#
+# width = skel.shape[1]
+# height= skel.shape[0]
+#
+# plt.axis((0,width,height,0))
+#
+# plt.imshow(~img, cmap=leaf_colors, interpolation="nearest")
+# #plt.imshow(np.sqrt(dmap), cmap=mpl.cm.jet_r, interpolation="nearest")
+#
+# plt.imshow(skel, cmap=skel_colors,  interpolation="nearest")
+# #plt.imshow(visited, cmap=mpl.cm.cool,  interpolation="nearest")
+#
 # Find the contour of the image:
 contour = findContour(~img)
 
@@ -1081,217 +1081,217 @@ except:
     # could not read the graph. Constructing it now
     G = buildGraph(img, skel)
 
-# handles to plot elements
-nodes = None
-edges = None
-node_labels = None
-edge_labels = None
-
-rad=[]
-plot_graph(G)
-
-# semi-transparent circles on the nodes
-Cercle = {}
-for p,r in zip(G, rad):
-	Cercle[p] = plt.Circle(p, radius=r, alpha=terminal_disk_alpha, color=terminal_disk_color)
-	plt.gca().add_patch(Cercle[p])
-
-root_patch = plt.Circle(root, radius=40, alpha=root_disk_alpha, color=root_disk_color)
-plt.gca().add_patch(root_patch)
-
-select_patch = plt.Circle(root, radius=40, alpha=select_disk_alpha, color=select_disk_color)
-plt.gca().add_patch(select_patch)
-
-
-def updateCircles(G,C):
-   ''' for p in G:
-	if p not in G.nodes():
-		Cercle[p].remove()
-	else:
-		Cercle[p].remove()
-		Cercle[p] = plt.Circle(p, radius=G.nodes[p]['dia'], alpha=terminal_disk_alpha, color=terminal_disk_color)
-		plt.gca().add_patch(Cercle[p])
-'''
-   for p in C:
-       if p not in G:
-           C[p].set_visible(False)
-       else:
-           C[p].set_visible(False)
-           C[p] = plt.Circle(p, radius=G.nodes[p]['dia_2']/2, alpha=terminal_disk_alpha, color=terminal_disk_color)
-           plt.gca().add_patch(C[p])
-
-updateCircles(G,Cercle)
-
-MoyAngleStrahler(G)
-
-def setRoot(root):
-    root_patch.center = root;
-
-    # save the new root in database
-    # convert to int from numpy type, for JSON to work later
-    leafData['root'] = (int(root[0]), int(root[1]))
-
-
-# a function called when the user clicks a node
-def onpick(event):
-    global select
-    # make the clicked node the new selected node
-
-    # for some reason it's difficult to get the coordinates of the clicked node
-    # so we use mouse coordinates and search for the closest node.
-    select = findClosest(list(G.nodes()), (event.mouseevent.xdata, event.mouseevent.ydata))
-    select_patch.center = select
-    plot_graph(G)
-    fig.canvas.draw()
-
-
-
-
-
-undo_stack = []
-
-# a function called on keypress events
-def keypress(event):
-    global nodes, edges, node_labels, G, root, select
-    print('press', event.key)
-    sys.stdout.flush()
-
-    if event.key=='x': # delete closest branch
-        e = findClosestEdge(G, (event.xdata, event.ydata))
-        undo_stack.append((G.copy(), root,Cercle))
-        G.remove_edge(*e)
-
-        updateMeasures(G, root)
-        plot_graph(G)
-        fig.canvas.draw()
-
-    if event.key=='u': # undo
-        if len(undo_stack) > 0:
-            print('Undo')
-            G,root,C = undo_stack.pop()
-            setRoot(root)
-            updateMeasures(G, root)
-            updateCircles(G,C)
-            plot_graph(G)
-            fig.canvas.draw()
-        else:
-            print('No further undo')
-
-    if event.key=='r': #re-build the graph from skeleton
-        print('Rebuilding tree')
-        undo_stack.append((G.copy(), root,Cercle))
-        G = buildGraph(img, skel)
-        plot_graph(G)
-        updateCircles(G,Cercle)
-        fig.canvas.draw()
-
-    if event.key == 'n': #add node
-        p =   findClosestSkel(skel2,(event.xdata,event.ydata))
-        print('closest node is (%5.1f, %5.1f)'%p)
-        undo_stack.append((G.copy(),root,Cercle))
-        print('adding node');
-        try:
-            addNodeSkel(G,p,skel2,j,t,dmap)
-        except:
-            print('  distance transform...')
-            dmap = mh.distance(img)
-            addNodeSkel(G,p,skel2,j,t,dmap)
-
-        Cercle[p] = plt.Circle(p, radius=(G.nodes[p]['dia']/2), alpha=terminal_disk_alpha, color=terminal_disk_color)
-        updateCircles(G,Cercle)
-        updateMeasures(G, root)
-        report(G)
-        plot_graph(G)
-        fig.canvas.draw()
-
-
-
-    if select == None:    # verify the selection
-        print('No active selection, please select a node')
-        return
-
-    if event.key=='t': # change the root
-        undo_stack.append((G.copy(), root, Cercle))
-        root = select
-        print('New root: ' + str(root))
-        setRoot(root)
-        updateMeasures(G, root)
-        report(G)
-
-        plot_graph(G)
-        fig.canvas.draw()
-
-
-    if event.key=='d': # delete closest node
-        p = select
-        if p == root:
-            print('Cannot remove the root.')
-            return
-        undo_stack.append((G.copy(), root, Cercle))
-        deleteNode(G,p)
-        Cercle[p].remove()
-        #report(G)
-
-        updateMeasures(G, root)
-        plot_graph(G)
-        fig.canvas.draw()
-
-
-    if event.key=='a': #marking of fertile nodes
-        p = select
-        print('this node is now fertile')
-        undo_stack.append((G.copy(),root,Cercle))
-        G.nodes[p]['node_color'] = node_color_fertile
-        G.nodes[p]['fertile'] = True
-        G[p][G.nodes[p]['parent']]['fertile'] = True
-        report(G)
-        plot_graph(G)
-        fig.canvas.draw()
-
-
-    if event.key == 'alt+e': #hide any latest selection
-        print('hide caracteristics')
-        undo_stack.append((G.copy(),root,Cercle))
-        for p in G:
-            if G.nodes[p]['node_color'] != node_color:
-                G.nodes[p]['node_color'] = node_color
-                plot_graph(G)
-                fig.canvas.draw()
-        report(G)
-
-
-    if event.key == 'b': # diameter modification
-        p = select
-        print('closest node is (%5.1f, %5.1f)'%p)
-        undo_stack.append((G.copy(),root,Cercle))
-        G.nodes[p]['dia_2'] = 2*dist(p,(event.xdata,event.ydata))
-        updateMeasures(G, root)
-        Cercle[p].remove()
-        Cercle[p] = plt.Circle(p,radius=G.nodes[p]['dia_2']/2,alpha=terminal_disk_alpha,color=terminal_disk_color)
-        plt.gca().add_patch(Cercle[p])
-        plot_graph(G)
-        fig.canvas.draw()
-
-
-
-
-
-# register the event callback functions
-fig.canvas.mpl_connect('pick_event', onpick)
-fig.canvas.mpl_connect('key_press_event', keypress)
-
-# plot disks for the apical distance, just for testing
-# for n in G:
-#    if G.nodes[n]['level'] == 1:
-#        r = G.nodes[n]['apicaldist']
-#        plt.gca().add_patch(plt.Circle(n, radius=r, alpha=.4))
-
-
-report(G)
-plt.tight_layout()
-
-# show the plot - program pauses here for as long as the window is open
-plt.show()
+# # handles to plot elements
+# nodes = None
+# edges = None
+# node_labels = None
+# edge_labels = None
+#
+# rad=[]
+# plot_graph(G)
+#
+# # semi-transparent circles on the nodes
+# Cercle = {}
+# for p,r in zip(G, rad):
+# 	Cercle[p] = plt.Circle(p, radius=r, alpha=terminal_disk_alpha, color=terminal_disk_color)
+# 	plt.gca().add_patch(Cercle[p])
+#
+# root_patch = plt.Circle(root, radius=40, alpha=root_disk_alpha, color=root_disk_color)
+# plt.gca().add_patch(root_patch)
+#
+# select_patch = plt.Circle(root, radius=40, alpha=select_disk_alpha, color=select_disk_color)
+# plt.gca().add_patch(select_patch)
+#
+#
+# def updateCircles(G,C):
+#    ''' for p in G:
+# 	if p not in G.nodes():
+# 		Cercle[p].remove()
+# 	else:
+# 		Cercle[p].remove()
+# 		Cercle[p] = plt.Circle(p, radius=G.nodes[p]['dia'], alpha=terminal_disk_alpha, color=terminal_disk_color)
+# 		plt.gca().add_patch(Cercle[p])
+# '''
+#    for p in C:
+#        if p not in G:
+#            C[p].set_visible(False)
+#        else:
+#            C[p].set_visible(False)
+#            C[p] = plt.Circle(p, radius=G.nodes[p]['dia_2']/2, alpha=terminal_disk_alpha, color=terminal_disk_color)
+#            plt.gca().add_patch(C[p])
+#
+# updateCircles(G,Cercle)
+#
+# MoyAngleStrahler(G)
+#
+# def setRoot(root):
+#     root_patch.center = root;
+#
+#     # save the new root in database
+#     # convert to int from numpy type, for JSON to work later
+#     leafData['root'] = (int(root[0]), int(root[1]))
+#
+#
+# # a function called when the user clicks a node
+# def onpick(event):
+#     global select
+#     # make the clicked node the new selected node
+#
+#     # for some reason it's difficult to get the coordinates of the clicked node
+#     # so we use mouse coordinates and search for the closest node.
+#     select = findClosest(list(G.nodes()), (event.mouseevent.xdata, event.mouseevent.ydata))
+#     select_patch.center = select
+#     plot_graph(G)
+#     fig.canvas.draw()
+#
+#
+#
+#
+#
+# undo_stack = []
+#
+# # a function called on keypress events
+# def keypress(event):
+#     global nodes, edges, node_labels, G, root, select
+#     print('press', event.key)
+#     sys.stdout.flush()
+#
+#     if event.key=='x': # delete closest branch
+#         e = findClosestEdge(G, (event.xdata, event.ydata))
+#         undo_stack.append((G.copy(), root,Cercle))
+#         G.remove_edge(*e)
+#
+#         updateMeasures(G, root)
+#         plot_graph(G)
+#         fig.canvas.draw()
+#
+#     if event.key=='u': # undo
+#         if len(undo_stack) > 0:
+#             print('Undo')
+#             G,root,C = undo_stack.pop()
+#             setRoot(root)
+#             updateMeasures(G, root)
+#             updateCircles(G,C)
+#             plot_graph(G)
+#             fig.canvas.draw()
+#         else:
+#             print('No further undo')
+#
+#     if event.key=='r': #re-build the graph from skeleton
+#         print('Rebuilding tree')
+#         undo_stack.append((G.copy(), root,Cercle))
+#         G = buildGraph(img, skel)
+#         plot_graph(G)
+#         updateCircles(G,Cercle)
+#         fig.canvas.draw()
+#
+#     if event.key == 'n': #add node
+#         p =   findClosestSkel(skel2,(event.xdata,event.ydata))
+#         print('closest node is (%5.1f, %5.1f)'%p)
+#         undo_stack.append((G.copy(),root,Cercle))
+#         print('adding node');
+#         try:
+#             addNodeSkel(G,p,skel2,j,t,dmap)
+#         except:
+#             print('  distance transform...')
+#             dmap = mh.distance(img)
+#             addNodeSkel(G,p,skel2,j,t,dmap)
+#
+#         Cercle[p] = plt.Circle(p, radius=(G.nodes[p]['dia']/2), alpha=terminal_disk_alpha, color=terminal_disk_color)
+#         updateCircles(G,Cercle)
+#         updateMeasures(G, root)
+#         report(G)
+#         plot_graph(G)
+#         fig.canvas.draw()
+#
+#
+#
+#     if select == None:    # verify the selection
+#         print('No active selection, please select a node')
+#         return
+#
+#     if event.key=='t': # change the root
+#         undo_stack.append((G.copy(), root, Cercle))
+#         root = select
+#         print('New root: ' + str(root))
+#         setRoot(root)
+#         updateMeasures(G, root)
+#         report(G)
+#
+#         plot_graph(G)
+#         fig.canvas.draw()
+#
+#
+#     if event.key=='d': # delete closest node
+#         p = select
+#         if p == root:
+#             print('Cannot remove the root.')
+#             return
+#         undo_stack.append((G.copy(), root, Cercle))
+#         deleteNode(G,p)
+#         Cercle[p].remove()
+#         #report(G)
+#
+#         updateMeasures(G, root)
+#         plot_graph(G)
+#         fig.canvas.draw()
+#
+#
+#     if event.key=='a': #marking of fertile nodes
+#         p = select
+#         print('this node is now fertile')
+#         undo_stack.append((G.copy(),root,Cercle))
+#         G.nodes[p]['node_color'] = node_color_fertile
+#         G.nodes[p]['fertile'] = True
+#         G[p][G.nodes[p]['parent']]['fertile'] = True
+#         report(G)
+#         plot_graph(G)
+#         fig.canvas.draw()
+#
+#
+#     if event.key == 'alt+e': #hide any latest selection
+#         print('hide caracteristics')
+#         undo_stack.append((G.copy(),root,Cercle))
+#         for p in G:
+#             if G.nodes[p]['node_color'] != node_color:
+#                 G.nodes[p]['node_color'] = node_color
+#                 plot_graph(G)
+#                 fig.canvas.draw()
+#         report(G)
+#
+#
+#     if event.key == 'b': # diameter modification
+#         p = select
+#         print('closest node is (%5.1f, %5.1f)'%p)
+#         undo_stack.append((G.copy(),root,Cercle))
+#         G.nodes[p]['dia_2'] = 2*dist(p,(event.xdata,event.ydata))
+#         updateMeasures(G, root)
+#         Cercle[p].remove()
+#         Cercle[p] = plt.Circle(p,radius=G.nodes[p]['dia_2']/2,alpha=terminal_disk_alpha,color=terminal_disk_color)
+#         plt.gca().add_patch(Cercle[p])
+#         plot_graph(G)
+#         fig.canvas.draw()
+#
+#
+#
+#
+#
+# # register the event callback functions
+# fig.canvas.mpl_connect('pick_event', onpick)
+# fig.canvas.mpl_connect('key_press_event', keypress)
+#
+# # plot disks for the apical distance, just for testing
+# # for n in G:
+# #    if G.nodes[n]['level'] == 1:
+# #        r = G.nodes[n]['apicaldist']
+# #        plt.gca().add_patch(plt.Circle(n, radius=r, alpha=.4))
+#
+#
+# report(G)
+# plt.tight_layout()
+#
+# # show the plot - program pauses here for as long as the window is open
+# plt.show()
 
 saveTreeText(G, path_basename+'_branches.txt', path_basename+'_nodes.txt');
 nx.write_gpickle(G, path_basename+'_graph.pkl')
