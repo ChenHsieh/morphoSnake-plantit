@@ -1,0 +1,10 @@
+name: morphosnake
+author: fjansson
+public: True
+clone: True
+from: Directory
+to: Directory
+image: docker://bendjamin101001/morphosnake:v2
+commands: python morphosnake.py "$INPUT"
+params:
+ - input
